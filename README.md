@@ -31,6 +31,20 @@ El archivo principal `formulario2.py` está estructurado en torno a una función
 ### 1. Función Principal: `main(page: ft.Page)`
 Esta es la función de punto de entrada requerida por el framework Flet. Su objetivo principal es inicializar el lienzo de la aplicación (la "página"), definir todos los componentes de la interfaz de usuario (UI), e integrarlos en la jerarquía visual de Flet.
 
+```python
+import flet as ft
+
+def main(page: ft.Page):
+    # Propiedades de la página (Canvas principal)
+    page.title = "Registro de Estudiantes - Tópicos Avanzados"
+    page.bgcolor = "#FDFBE3"            # Color crema sofisticado
+    page.padding = 30                    # Espaciado interno generoso
+    page.theme_mode = ft.ThemeMode.LIGHT # Interfaz clara por defecto
+    
+    # ... (Instanciación de controles) ...
+```
+
+
 **Funcionamiento detallado:**
 *   **Configuración del Canvas:** Recibe un objeto `page` de tipo `ft.Page`. Modifica propiedades globales como `page.title` (título de la ventana), `page.bgcolor` (color de fondo crema tipo papel premium `#FDFBE3`), `page.padding` (márgenes internos) y `page.theme_mode` (fijado en modo claro).
 *   **Instanciación de Componentes UI:** Se encarga de instanciar cada uno de los controles interactivos:
@@ -44,6 +58,24 @@ Esta es la función de punto de entrada requerida por el framework Flet. Su obje
 ### 2. Función Lógica: `validar_campos()`
 Es una función anidada directamente en la memoria local de la función `main()`. Se encarga completamente de la validación del lado del cliente (frontend) en Flet antes de recolectar los datos u operar con ellos. Implementa la "inteligencia de negocio" para garantizar la integridad y fiabilidad del registro.
 
+```python
+    def validar_campos():
+        es_valido = True
+        # Validación de Nombre: No vacío
+        if not txt_nombre.value or txt_nombre.value.strip() == "":
+            txt_nombre.border_color = "red"
+            txt_error_nombre.value = "Ingresa tu nombre"
+            txt_error_nombre.visible = True
+            es_valido = False
+        else:
+            txt_nombre.border_color = "#4D2A32"
+            txt_error_nombre.visible = False
+            
+        # ... (Resto de validaciones) ...
+        return es_valido
+```
+
+
 **Funcionamiento detallado:**
 *   **Mecanismo de Bandera (Flag State):** Inicializa de forma optimista una variable booleana actuando como bandera: `es_valido = True`. En cada uno de sus bloques condicionales, evalúa rigurosamente en secuencia cada campo. Si una evaluación se rechaza, la bandera cambia a `False` pero la función continúa iterando para encontrar otros campos vacíos u omitidos y mostrarlos todos en pantalla a la vez.
 *   **Validación de Cadenas Limpias:** Comprueba que cada control de texto no reciba valores nulos o constituidos únicamente de espacios en blanco aplicando la sanitización mediante el método nativo en Python `.strip()`.
@@ -53,10 +85,36 @@ Es una función anidada directamente en la memoria local de la función `main()`
 ### 3. Función Controladora de Eventos: `enviar_datos(e)`
 Este método funciona como el "listener" (oyente) disparador asociado al clic del botón Enviar. Trabaja como el concentrador final del sistema, interconectando la validación y el procesamiento para el usuario.
 
+```python
+    def enviar_datos(e):
+        # Primero validamos que no haya errores
+        if not validar_campos():
+            page.update()
+            return
+
+        # Captura de datos finales de los controles
+        nombre = txt_nombre.value.strip()
+        # ... (captura del resto de campos) ...
+
+        # Definición del componente de Ventana Modal (AlertDialog)
+        dlg_datos = ft.AlertDialog(
+            title=ft.Text("Verificación de Datos", weight=ft.FontWeight.BOLD, color="#4D2A32", size=20),
+            content=ft.Column([
+                # ... (texto con los datos recopilados) ...
+            ], tight=True, spacing=10),
+            # ...
+        )
+
+        page.dialog = dlg_datos
+        dlg_datos.open = True
+        page.update()
+```
+
+
 **Funcionamiento detallado:**
 *   **Invocación Transaccional y Bloqueo Seguro:** Su primera acción lógica es interconectar la función con la respuesta final de la función local `validar_campos()`. Si recibe un estado falso, bloquea un envío indebido solicitando una actualización obligatoria a la pantalla con `page.update()` para aplicar los estilos de error y usa la instrucción `return` para interrumpir limpiamente cualquier operación futura.
 *   **Extracción de Valores Finales:** Si el filtro principal anterior se declara limpio (favorable), extrae toda la información final consultando a los objetos locales de Flet (usando `.value`) y las almacena en variables nativas de Python, aplicando `.strip()` para saneamiento final.
-*   **Construcción de Interfaz Modal Autónoma (AlertDialog):** Crea las barreras visuales de interacción instanciando el widget emergente interactivo `ft.AlertDialog()`. Lo enriquece inyectando divisiones de línea y múltiples componentes de texto `ft.Text()` estructurados mediante f-strings, mostrando un resumen fiel de los registros recolectados.
+*   **Construcción de Interfaz Modal Autónoma (AlertDialog):** Crea las barreras visuales de interacción instanciando el widget emergente interactivo `ft.AlertDialog()`. Lo enriquece inyectando divisiones de línea y múltiples componentes de texto `ft.Text()` estructurados mediante f-strings, mostrando un resumen fiel de los registros recolectados. **Nota Importante:** Aquí se utilizó intencionadamente este método avanzado (`ft.AlertDialog`) para mostrar los datos recogidos directamente en la interfaz gráfica (GUI) como un pop-up elegante, en lugar de utilizar un método básico y poco profesional como imprimir las variables en la consola de comandos (`print()`).
 *   **Definición de Función de Cierre (`cerrar_dialogo(e)`):** Alojado adentro, declara en memoria un pequeño controlador que mutará únicamente el estado del diálogo. Sobrescribe su propiedad (`dlg_datos.open = False`) para cerrar la ventana modal y refrescar la pantalla tras revisarlo.
 *   **Renderización Forzada de Diálogos:** Finaliza asociando físicamente la variable a la propiedad reservada natural de la página con `page.dialog = dlg_datos`. Sobrescribe a un valor verdadero su apertura nativa (`dlg_datos.open = True`) y despacha la orden de re-dibujar la interfaz final invocando `page.update()`, permitiendo al cliente confirmar su inscripción asegurada.
 
