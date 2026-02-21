@@ -10,11 +10,10 @@ Este repositorio alberga el **Proyecto Integrador de la Unidad 1**, enfocado en 
 
 ## 📋 Tabla de Contenidos
 - [🚀 Descripción del Proyecto](#-descripción-del-proyecto)
-- [🛠️ Arquitectura y Funcionamiento Detallado](#️-arquitectura-y-funcionamiento-detallado)
-  - [1. Configuración de la Ventana](#1-configuración-de-la-ventana)
-  - [2. Declaración de Controles (Componentes UI)](#2-declaración-de-controles-componentes-ui)
-  - [3. Sistema de Validación Exhaustivo](#3-sistema-de-validación-exhaustivo)
-  - [4. Procesamiento de Datos y AlertDialog](#4-procesamiento-de-datos-y-alertdialog)
+- [🛠️ Arquitectura y Funcionamiento Detallado del Código](#️-arquitectura-y-funcionamiento-detallado-del-código)
+  - [1. Función Principal: `main`](#1-función-principal-mainpage-ftpage)
+  - [2. Función Lógica: `validar_campos`](#2-función-lógica-validar_campos)
+  - [3. Función Controladora de Eventos: `enviar_datos`](#3-función-controladora-de-eventos-enviardatose)
 - [📦 Instalación y Uso](#-instalación-y-uso)
 - [✨ Funcionalidades Clave](#-funcionalidades-clave)
 
@@ -25,150 +24,41 @@ La aplicación implementa un formulario de registro académico diseñado bajo pr
 
 ---
 
-## 🛠️ Arquitectura y Funcionamiento Detallado
+## 🛠️ Arquitectura y Funcionamiento Detallado del Código
 
-A continuación, se presenta el código de `formulario2.py` desglosado por bloques técnicos con su explicación correspondiente.
+El archivo principal `formulario2.py` está estructurado en torno a una función principal (`main`) que actúa como el ciclo de vida de la aplicación, y funciones anidadas que manejan la lógica de validación y eventos. A continuación, se detalla el funcionamiento exacto de cada una de estas funciones clave:
 
-### 1. Configuración de la Ventana
-El punto de entrada configura el lienzo de la aplicación.
+### 1. Función Principal: `main(page: ft.Page)`
+Esta es la función de punto de entrada requerida por el framework Flet. Su objetivo principal es inicializar el lienzo de la aplicación (la "página"), definir todos los componentes de la interfaz de usuario (UI), e integrarlos en la jerarquía visual de Flet.
 
-```python
-import flet as ft
+**Funcionamiento detallado:**
+*   **Configuración del Canvas:** Recibe un objeto `page` de tipo `ft.Page`. Modifica propiedades globales como `page.title` (título de la ventana), `page.bgcolor` (color de fondo crema tipo papel premium `#FDFBE3`), `page.padding` (márgenes internos) y `page.theme_mode` (fijado en modo claro).
+*   **Instanciación de Componentes UI:** Se encarga de instanciar cada uno de los controles interactivos:
+    *   `TextField`: Para el ingreso de texto libre (Nombre, Número de control, Email). Se configuran con propiedades como `expand=True` para diseño elástico y bordes temáticos.
+    *   `Dropdown`: Menús desplegables para Carrera y Semestre, asegurando que el usuario elija de un set de opciones predefinido limitando los errores de escritura.
+    *   `RadioGroup` y `Radio`: Agrupación de botones de opción única interconectados para definir el Género del estudiante.
+*   **Inicialización del Sistema de Alertas (Gestión de Errores):** Por cada control de entrada que define, también inicializa paralelamente un componente de texto de error asociado (ocultos inicialmente con `visible=False` y de color rojo). Estos actuarán como contenedores que se volverán visibles dinámicamente si el usuario comete equivocaciones.
+*   **Bindeo de Eventos:** Se definen los manejadores lógicos y se asocian a las acciones del usuario, siendo el más crucial la asociación de la función `enviar_datos` a la propiedad `on_click` del botón "Enviar".
+*   **Ensamblado (DOM de Flet):** Finalmente, inyecta todos estos componentes individuales y contenedores previamente definidos dentro del árbol visual utilizando columnas (`ft.Column`) y filas (`ft.Row`) para estructurar el documento verticalmente, enviándolos a renderizar mediante la orden `page.add(...)`.
 
-def main(page: ft.Page):
-    # Propiedades de la página (Canvas principal)
-    page.title = "Registro de Estudiantes - Tópicos Avanzados"
-    page.bgcolor = "#FDFBE3"            # Color crema sofisticado
-    page.padding = 30                    # Espaciado interno generoso
-    page.theme_mode = ft.ThemeMode.LIGHT # Interfaz clara por defecto
-```
-> [!NOTE]
-> La elección del color `#FDFBE3` busca reducir la fatiga visual y dar un aspecto tipo "papel" premium al formulario.
+### 2. Función Lógica: `validar_campos()`
+Es una función anidada directamente en la memoria local de la función `main()`. Se encarga completamente de la validación del lado del cliente (frontend) en Flet antes de recolectar los datos u operar con ellos. Implementa la "inteligencia de negocio" para garantizar la integridad y fiabilidad del registro.
 
-### 2. Declaración de Controles (Componentes UI)
-Aquí es donde definimos cada elemento de interacción. Note cómo cada campo tiene su propia etiqueta de error asociada.
+**Funcionamiento detallado:**
+*   **Mecanismo de Bandera (Flag State):** Inicializa de forma optimista una variable booleana actuando como bandera: `es_valido = True`. En cada uno de sus bloques condicionales, evalúa rigurosamente en secuencia cada campo. Si una evaluación se rechaza, la bandera cambia a `False` pero la función continúa iterando para encontrar otros campos vacíos u omitidos y mostrarlos todos en pantalla a la vez.
+*   **Validación de Cadenas Limpias:** Comprueba que cada control de texto no reciba valores nulos o constituidos únicamente de espacios en blanco aplicando la sanitización mediante el método nativo en Python `.strip()`.
+*   **Validación de Formato Elemental:** Para el objeto `txt_email`, además de verificar su no-nulidad, implementa una revisión rudimentaria requiriendo de forma innegociable la existencia del carácter arroba (`@`).
+*   **Validación en Tiempo Real y Mutación Directa UI:** Este es el núcleo dinámico de su ejecución. Cada falla sobreescribe inmediatamente las propiedades visuales del control del componente original de UI de Flet; inyecta un color punitivo en el borde (`border_color = "red"`), imprime un mensaje de ayuda en la visibilidad de la etiqueta de error (`visible = True`). Si el error se repara en un intento posterior, invierte estas mutaciones visuales para limpiar la pantalla. Al final retorna la bandera `es_valido`.
 
-```python
-    # Campo de Nombre con su etiqueta de error
-    txt_nombre = ft.TextField(label="Nombre", border_color="#4D2A32", expand=True, value="")
-    txt_error_nombre = ft.Text("", color="red", size=12, visible=False)
-    col_nombre = ft.Column([txt_nombre, txt_error_nombre], spacing=2)
+### 3. Función Controladora de Eventos: `enviar_datos(e)`
+Este método funciona como el "listener" (oyente) disparador asociado al clic del botón Enviar. Trabaja como el concentrador final del sistema, interconectando la validación y el procesamiento para el usuario.
 
-    # Campo de Número de Control
-    txt_control = ft.TextField(label="Numero de control", border_color="#4D2A32", expand=True, value="")
-    txt_error_control = ft.Text("", color="red", size=12, visible=False)
-    col_control = ft.Column([txt_control, txt_error_control], spacing=2)
-
-    # Campo de Email con validación de formato
-    txt_email = ft.TextField(label="Email", border_color="#4D2A32", value="")
-    txt_error_email = ft.Text("", color="red", size=12, visible=False)
-    col_email = ft.Column([txt_email, txt_error_email], spacing=2)
-
-    # Dropdowns para Carrera y Semestre
-    dd_carrera = ft.Dropdown(
-        label="Carrera", expand=True, border_color="#4D2A32",
-        options=[
-            ft.dropdown.Option("Ingeniería en Sistemas"),
-            ft.dropdown.Option("Ingeniería Civil"),
-            ft.dropdown.Option("Ingeniería Industrial"),
-        ]
-    )
-    dd_semestre = ft.Dropdown(
-        label="Semestre", expand=True, border_color="#4D2A32",
-        options=[ft.dropdown.Option(str(i)) for i in range(1, 7)]
-    )
-
-    # Grupo de Radio Buttons para Género
-    rg_genero = ft.RadioGroup(content=ft.Row([
-        ft.Radio(value="masculino", label="Masculino", fill_color="#4D2A32"),
-        ft.Radio(value="femenino", label="Femenino", fill_color="#4D2A32")
-    ]))
-```
-
-### 3. Sistema de Validación Exhaustivo
-Esta función encapsula toda la inteligencia de negocio para prevenir el envío de datos erróneos.
-
-```python
-    def validar_campos():
-        es_valido = True
-        # Validación de Nombre: No vacío
-        if not txt_nombre.value or txt_nombre.value.strip() == "":
-            txt_nombre.border_color = "red"
-            txt_error_nombre.value = "Ingresa tu nombre"
-            txt_error_nombre.visible = True
-            es_valido = False
-        else:
-            txt_nombre.border_color = "#4D2A32"
-            txt_error_nombre.visible = False
-
-        # Validación de Email: Formato con '@'
-        if not txt_email.value or "@" not in txt_email.value:
-            txt_email.border_color = "red"
-            txt_error_email.value = "Ingresa un correo electrónico válido"
-            txt_error_email.visible = True
-            es_valido = False
-        else:
-            txt_email.border_color = "#4D2A32"
-            txt_error_email.visible = False
-
-        # Validación de Dropdowns: Opción seleccionada
-        if not dd_carrera.value:
-            dd_carrera.error_text = "Dato requerido"
-            es_valido = False
-        if not dd_semestre.value:
-            dd_semestre.error_text = "Dato requerido"
-            es_valido = False
-
-        return es_valido
-```
-
-### 4. Procesamiento de Datos y Ventana de Resultados (AlertDialog)
-Esta es la fase final donde el sistema confirma al usuario que su registro fue exitoso mediante una ventana modal dinámica. A diferencia de métodos tradicionales (como imprimir en consola), utilizamos el componente `ft.AlertDialog` para una experiencia inmersiva.
-
-```python
-    def enviar_datos(e):
-        # Primero validamos que no haya errores
-        if not validar_campos():
-            page.update()
-            return
-
-        # Captura de datos finales de los controles
-        nombre = txt_nombre.value.strip()
-        control = txt_control.value.strip()
-        email = txt_email.value.strip()
-        carrera = dd_carrera.value
-        semestre = dd_semestre.value
-        genero = rg_genero.value
-
-        # Definición del componente de Ventana Modal (AlertDialog)
-        dlg_datos = ft.AlertDialog(
-            title=ft.Text("Verificación de Datos", weight=ft.FontWeight.BOLD, color="#4D2A32", size=20),
-            content=ft.Column([
-                ft.Divider(color="#4D2A32"),
-                ft.Text(f"👤 Estudiante: {nombre}", size=15),
-                ft.Text(f"🆔 Control: {control}", size=15),
-                ft.Text(f"✉️ Email: {email}", size=15),
-                ft.Text(f"🎓 Carrera: {carrera}", size=15),
-                ft.Text(f"📅 Semestre: {semestre}", size=15),
-                ft.Text(f"🚻 Género: {genero}", size=15),
-            ], tight=True, spacing=10),
-            actions=[
-                ft.TextButton("Cerrar", on_click=lambda _: setattr(dlg_datos, 'open', False))
-            ],
-            actions_alignment=ft.MainAxisAlignment.END,
-        )
-
-        # Inserción del diálogo en el objeto 'page' y apertura
-        page.dialog = dlg_datos
-        dlg_datos.open = True
-        page.update()
-```
-
-#### 📋 Desglose del Método de Visualización
-*   **Recopilación:** Se extraen los valores actuales de cada control mediante la propiedad `.value` una vez superada la validación.
-*   **Construcción Dinámica:** El `ft.AlertDialog` se genera en tiempo de ejecución, permitiendo inyectar los datos del usuario directamente en el cuerpo del mensaje.
-*   **Interactividad y Cierre:** Se integra un `ft.TextButton` que gestiona el estado de la ventana (`open = False`), garantizando que la interfaz vuelva a su estado original tras la confirmación.
-*   **Estética:** Se utiliza una `ft.Column` con `tight=True` y divisores para que el modal sea visualmente agradable y se ajuste al contenido.
+**Funcionamiento detallado:**
+*   **Invocación Transaccional y Bloqueo Seguro:** Su primera acción lógica es interconectar la función con la respuesta final de la función local `validar_campos()`. Si recibe un estado falso, bloquea un envío indebido solicitando una actualización obligatoria a la pantalla con `page.update()` para aplicar los estilos de error y usa la instrucción `return` para interrumpir limpiamente cualquier operación futura.
+*   **Extracción de Valores Finales:** Si el filtro principal anterior se declara limpio (favorable), extrae toda la información final consultando a los objetos locales de Flet (usando `.value`) y las almacena en variables nativas de Python, aplicando `.strip()` para saneamiento final.
+*   **Construcción de Interfaz Modal Autónoma (AlertDialog):** Crea las barreras visuales de interacción instanciando el widget emergente interactivo `ft.AlertDialog()`. Lo enriquece inyectando divisiones de línea y múltiples componentes de texto `ft.Text()` estructurados mediante f-strings, mostrando un resumen fiel de los registros recolectados.
+*   **Definición de Función de Cierre (`cerrar_dialogo(e)`):** Alojado adentro, declara en memoria un pequeño controlador que mutará únicamente el estado del diálogo. Sobrescribe su propiedad (`dlg_datos.open = False`) para cerrar la ventana modal y refrescar la pantalla tras revisarlo.
+*   **Renderización Forzada de Diálogos:** Finaliza asociando físicamente la variable a la propiedad reservada natural de la página con `page.dialog = dlg_datos`. Sobrescribe a un valor verdadero su apertura nativa (`dlg_datos.open = True`) y despacha la orden de re-dibujar la interfaz final invocando `page.update()`, permitiendo al cliente confirmar su inscripción asegurada.
 
 ---
 
