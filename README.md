@@ -122,34 +122,53 @@ Esta función encapsula toda la inteligencia de negocio para prevenir el envío 
         return es_valido
 ```
 
-### 4. Procesamiento de Datos y AlertDialog
-El final del flujo de trabajo, donde se muestran los datos recolectados.
+### 4. Procesamiento de Datos y Ventana de Resultados (AlertDialog)
+Esta es la fase final donde el sistema confirma al usuario que su registro fue exitoso mediante una ventana modal dinámica. A diferencia de métodos tradicionales (como imprimir en consola), utilizamos el componente `ft.AlertDialog` para una experiencia inmersiva.
 
 ```python
     def enviar_datos(e):
+        # Primero validamos que no haya errores
         if not validar_campos():
             page.update()
             return
 
-        # Construcción dinámica del contenido del modal
+        # Captura de datos finales de los controles
+        nombre = txt_nombre.value.strip()
+        control = txt_control.value.strip()
+        email = txt_email.value.strip()
+        carrera = dd_carrera.value
+        semestre = dd_semestre.value
+        genero = rg_genero.value
+
+        # Definición del componente de Ventana Modal (AlertDialog)
         dlg_datos = ft.AlertDialog(
-            title=ft.Text("Verificación de Datos", weight=ft.FontWeight.BOLD, color="#4D2A32"),
+            title=ft.Text("Verificación de Datos", weight=ft.FontWeight.BOLD, color="#4D2A32", size=20),
             content=ft.Column([
                 ft.Divider(color="#4D2A32"),
-                ft.Text(f"👤 Estudiante: {txt_nombre.value.strip()}"),
-                ft.Text(f"🆔 Control: {txt_control.value.strip()}"),
-                ft.Text(f"✉️ Email: {txt_email.value.strip()}"),
-                ft.Text(f"🎓 Carrera: {dd_carrera.value}"),
-                ft.Text(f"📅 Semestre: {dd_semestre.value}"),
-                ft.Text(f"🚻 Género: {rg_genero.value}"),
+                ft.Text(f"👤 Estudiante: {nombre}", size=15),
+                ft.Text(f"🆔 Control: {control}", size=15),
+                ft.Text(f"✉️ Email: {email}", size=15),
+                ft.Text(f"🎓 Carrera: {carrera}", size=15),
+                ft.Text(f"📅 Semestre: {semestre}", size=15),
+                ft.Text(f"🚻 Género: {genero}", size=15),
             ], tight=True, spacing=10),
-            actions=[ft.TextButton("Cerrar", on_click=lambda _: setattr(dlg_datos, 'open', False))],
+            actions=[
+                ft.TextButton("Cerrar", on_click=lambda _: setattr(dlg_datos, 'open', False))
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
         )
 
+        # Inserción del diálogo en el objeto 'page' y apertura
         page.dialog = dlg_datos
         dlg_datos.open = True
         page.update()
 ```
+
+#### 📋 Desglose del Método de Visualización
+*   **Recopilación:** Se extraen los valores actuales de cada control mediante la propiedad `.value` una vez superada la validación.
+*   **Construcción Dinámica:** El `ft.AlertDialog` se genera en tiempo de ejecución, permitiendo inyectar los datos del usuario directamente en el cuerpo del mensaje.
+*   **Interactividad y Cierre:** Se integra un `ft.TextButton` que gestiona el estado de la ventana (`open = False`), garantizando que la interfaz vuelva a su estado original tras la confirmación.
+*   **Estética:** Se utiliza una `ft.Column` con `tight=True` y divisores para que el modal sea visualmente agradable y se ajuste al contenido.
 
 ---
 
