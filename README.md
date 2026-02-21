@@ -179,7 +179,7 @@ Este método funciona como el "listener" (oyente) disparador asociado al clic de
 ---
 
 <div align="center">
-  <b>Desarrollado con ❤️ por:</b> <a href="https://github.com/IKERD11">IKERD11</a><br>
+  <b>Desarrollado por:</b> IKERD11<br>
   <b>Materia:</b> Tópicos Avanzados de Programación<br>
-  <b>Docente:</b> Unidad 1
+  <b>Unidad:</b> 1
 </div>
